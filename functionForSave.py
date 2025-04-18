@@ -54,6 +54,7 @@ def LoadSave(Name,Profile):
         for i in os.listdir(CurrentSavePath):
             os.remove(CurrentSavePath +"/"+i)
     shutil.copytree(LoadedSavePath,CurrentSavePath,dirs_exist_ok=True)
+    return True
 
 def GetListOfSave(Profile):
     return os.listdir(AllSavePath+"/"+Profile)
@@ -68,6 +69,7 @@ def CreateProfile(Profile):
     if os.path.exists(NewProfilePath) :
         return "Profile already exist"
     os.makedirs(NewProfilePath,exist_ok=True)
+    return True
 
 def DeleteProfile(Profile):
     if Profile == "":
@@ -79,6 +81,7 @@ def DeleteProfile(Profile):
             dirsPath = RemovedprofilePath + "/" + d
             os.chmod(dirsPath,stat.S_IWUSR)
     shutil.rmtree(RemovedprofilePath)
+    return True
 
 def DuplicateProfile(Profile, NameOfCopy):
     profilePath = AllSavePath +"/"+Profile
