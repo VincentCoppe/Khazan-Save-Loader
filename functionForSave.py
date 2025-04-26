@@ -9,6 +9,9 @@ for i in os.listdir(folderLocation) :
         CurrentSavePath = folderLocation+"/"+i
         break
 
+def GetSavePath(Profile):
+    return AllSavePath +"/"+Profile
+
 def ImportSave(Name,Profile):
     if Profile == "":
         return False
@@ -92,5 +95,13 @@ def RenameProfile(Profile, NewName):
     OldProfilePath = AllSavePath +"/"+Profile
     NewProfilePath = AllSavePath +"/"+NewName
     os.rename(OldProfilePath,NewProfilePath)
+
+def ImportExternalSave(Profile,PathOfSave,nameOfSave):
+    NewSavePath = AllSavePath +"/"+Profile+"/"+nameOfSave
+    shutil.copytree(PathOfSave,NewSavePath,dirs_exist_ok=True)
+    setting = CurrentSavePath+"/ProfileSettings.sav"
+    os.chmod(NewSavePath,stat.S_IWUSR)
+    shutil.copy(setting,NewSavePath)
+    
 
 

@@ -1,6 +1,6 @@
 import sys,os
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QIcon, QFont,QFontDatabase
 from PyQt5.QtCore import Qt, QPoint
 import functionForSave
 
@@ -20,6 +20,36 @@ class MainWindow(QMainWindow):
         icon_path = os.path.join(base, "icon.ico")
         self.setWindowIcon(QIcon(icon_path))
        
+        self.setStyleSheet("""
+            QMainWindow{
+                background-color: #181818;
+            }
+            QListWidget{
+                background-color: #1f1f1f; 
+                color: #cccccc;        
+            }
+            QComboBox{
+                background-color: #2c2c2c; 
+                color: #cccccc;
+            }
+            QComboBox QAbstractItemView {
+                background: #2c2c2c; 
+                
+                color: #cccccc;
+                selection-background-color: #cccccc;
+                selection-color: #5f5f5f;
+            }
+                           
+            QPushButton{
+                background-color :  #5f5f5f; 
+                color : #eeeeee;             
+            }
+
+            QPushButton:hover{
+                background-color :  #cccccc; 
+                color : #5f5f5f;          
+            }                      
+        """)
 
         # Central widget and layout
         central_widget = QWidget()
@@ -32,8 +62,9 @@ class MainWindow(QMainWindow):
         self.move((screen.width() - self.width()) // 2, (screen.height() - self.height()) // 2)
 
         # Title label
-        self.label = QLabel("Khazan Save Loader", self)
+        self.label = QLabel("KHAZAN SAVE LOADER", self) 
         self.label.setFont(QFont("Helvetica", 15))
+        self.label.setStyleSheet("color: #eeeeee")
         self.label.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
 
         # Profile selection
@@ -46,8 +77,10 @@ class MainWindow(QMainWindow):
         self.qcombo.setCurrentIndex(-1)
         self.qcombo.activated.connect(self.profileSelect)
 
+        
+
         # Profile buttons
-        VBox = QVBoxLayout()
+        VBoxProfile = QVBoxLayout()
         for label, handler in [
             ("Create Profile", self.CreateProfile),
             ("Delete Profile", self.DeleteProfile),
@@ -56,7 +89,14 @@ class MainWindow(QMainWindow):
         ]:
             btn = QPushButton(label, self)
             btn.clicked.connect(handler)
-            VBox.addWidget(btn, alignment=Qt.AlignTop)
+            VBoxProfile.addWidget(btn, alignment=Qt.AlignTop)
+
+        #Dark Mode Buttons
+        #import External Save
+        VBoxImport = QVBoxLayout()
+        btn = QPushButton("Import External Save",self)
+        btn.clicked.connect(self.ImportExternal)
+        VBoxImport.addWidget(btn, alignment=Qt.AlignTop)
 
         # Save list and context menu
         self.listwidget = QListWidget()
@@ -81,16 +121,19 @@ class MainWindow(QMainWindow):
         # Layout positioning
         layout.addWidget(self.label, 0, 0)
         layout.addWidget(self.qcombo, 0, 1)
-        layout.addLayout(VBox, 1, 1, alignment=Qt.AlignTop)
+        layout.addLayout(VBoxProfile, 1, 1, alignment=Qt.AlignTop)
+        layout.addLayout(VBoxImport,2,1, alignment=Qt.AlignTop)
         layout.addWidget(self.listwidget, 1, 0)
         layout.addLayout(h_layout, 2, 0)
         layout.addWidget(self.popupmsg, 3, 0)
+        
 
     # ---------- Utility Methods ----------
 
-    def showMessage(self, text, color="black"):
+    def showMessage(self, text, color="#eeeeee"):
         self.popupmsg.setStyleSheet(f"color: {color};")
         self.popupmsg.setText(text)
+        
 
     def currentProfile(self):
         return self.qcombo.currentText()
@@ -241,6 +284,30 @@ class MainWindow(QMainWindow):
                     self.showMessage("Select a profile first", "red")
         else:
             self.showMessage("Select a savestate to be updated", "red")
+    
+    def ImportExternal(self):
+        if not self.profileSelected():
+            self.showMessage("Select a profile first", "red")
+            return
+        folder = QFileDialog.getExistingDirectory(self, 'Select a Folder')
+        folderIsCorrect = False
+        if folder:
+            saveName = folder.split("/")[-1]
+            for i in os.listdir(folder):
+                if i.endswith("sav"):
+                    folderIsCorrect = True
+            if folderIsCorrect:
+                saveName, ok = QInputDialog.getText(self, "Choose a Name for imported Save", "Choose Name:", text=saveName)
+                if saveName not in functionForSave.GetListOfSave(self.currentProfile()):
+                    functionForSave.ImportExternalSave(self.currentProfile(),folder,saveName)
+                    self.showMessage(saveName +" has been imported")
+                    self.listwidget.addItem(saveName)
+                else:
+                    self.showMessage("Savestate already exists", "red")     
+            else:
+                self.showMessage('Folder is not a savefile')
+        else:
+            self.showMessage('No folder selected')
 
     # ---------- Context Menu ----------
 
@@ -253,6 +320,7 @@ class MainWindow(QMainWindow):
         menu.addAction(QAction("Duplicate", self, triggered=self.DuplicateSave))
         menu.addAction(QAction("Replace", self, triggered=self.UpdateSave))
         menu.addAction(QAction("Delete", self, triggered=self.RemoveSave))
+        menu.addAction(QAction("Open Folder Path", self, triggered=lambda: os.startfile(functionForSave.GetSavePath(self.currentProfile()))))
         menu.exec_(self.listwidget.viewport().mapToGlobal(position))
 
 
